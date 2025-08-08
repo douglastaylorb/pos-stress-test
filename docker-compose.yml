@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  stress-test:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM golang:1.24-alpine AS builder
+        WORKDIR /app
+        COPY go.mod main.go ./
+        RUN go build -o load-tester main.go
+
+        FROM alpine:latest
+        RUN apk --no-cache add ca-certificates
+        WORKDIR /root/
+        COPY --from=builder /app/load-tester .
+        ENTRYPOINT ["./load-tester"]
+    
+    # Remove container após execução
+    restart: "no"
+    
+    # Permite acesso à rede
+    network_mode: "host"
